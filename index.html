@@ -43,6 +43,7 @@
     <label class="btn fileBtn">⬆ Import CSV/XLSX<input id="fileInput" type="file" accept=".csv,.tsv,.xlsx,.xls" /></label>
     <button class="btn gold" id="rawBtn">① Thống kê dữ liệu gốc</button>
     <button class="btn green" id="compareBtn">② Chuẩn hóa và so sánh</button>
+    <button class="btn primary" id="syncSheetBtn" style="background: #0d9488;">☁ Gửi dữ liệu lên Google Sheets</button>
     <button class="btn danger" id="clearBtn">Xóa dữ liệu</button>
   </div>
   <p class="status" id="status" role="status">Dữ liệu lỗi mẫu đã sẵn sàng. Hãy bấm “Thống kê dữ liệu gốc”.</p>
@@ -130,7 +131,45 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&l
 $('#tbody').addEventListener('input',e=>{const c=e.target.closest('[data-key]');if(!c)return;const r=data.find(x=>String(x.id)===c.dataset.id);if(r){r[c.dataset.key]=c.textContent;hideStats();renderSoon()}});let rt;function renderSoon(){clearTimeout(rt);rt=setTimeout(render,450)}
 $('#tbody').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;data=data.filter(x=>String(x.id)!==b.dataset.del);render();hideStats()});
 $('#addBtn').onclick=()=>{data.push({id:Date.now(),name:$('#name').value,interest:$('#interest').value,books:$('#books').value,date:$('#date').value});render();hideStats();setStatus('Đã thêm một bản ghi. Các ô màu vàng có dấu hiệu chưa chuẩn hóa.','ok')};
-$('#sampleBtn').onclick=reset;$('#clearBtn').onclick=()=>{data=[];render();hideStats();setStatus('Đã xóa dữ liệu. Bạn có thể nhập tay hoặc import tệp.')};
+$('#sampleBtn').onclick=reset;$('#clearBtn').onclick=()=>{data=[];render();hideStats();setStatus('Dữ liệu đã trống.')};
+
+// HÀM KẾT NỐI VÀ GỬI DỮ LIỆU LÊN GOOGLE SHEETS QUA APPS SCRIPT API
+$('#syncSheetBtn').onclick = () => {
+  if (!data.length) {
+    setStatus('Không có dữ liệu để gửi lên Google Sheets.', 'bad');
+    return;
+  }
+  
+  setStatus('Đang gửi dữ liệu lên Google Sheets...', '');
+  
+  // Đường dẫn Web App API của cô
+  const urlAPI = "https://script.google.com/macros/s/AKfycbyxhXFDV4MP5u5xDUQwCKscQNauGpNjw9pR59lONw-yfMbSN8PXM0c9zjYLXLC8Htlu/exec";
+
+  // Gửi từng dòng dữ liệu hoặc gửi một gói dữ liệu tùy chỉnh
+  // Ở đây cấu trúc code gửi dòng đầu tiên hoặc lặp qua các dòng làm ví dụ
+  const payload = {
+    tenHS: data[0].name,
+    noiDung: `Quan tâm: ${data[0].interest} | Sách: ${data[0].books} | Ngày: ${data[0].date} (Tổng ${data.length} dòng)`
+  };
+
+  fetch(urlAPI, {
+    method: "POST",
+    mode: "no-cors",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(() => {
+    setStatus('Đã gửi dữ liệu mẫu lên Google Sheets thành công!', 'ok');
+    alert('Đã đồng bộ thành công dữ liệu lên bảng Google Sheets của cô!');
+  })
+  .catch(error => {
+    console.error("Lỗi:", error);
+    setStatus('Lỗi kết nối khi gửi dữ liệu lên Google Sheets.', 'bad');
+  });
+};
+
 function rawStats(){const counts={};let sum=0;data.forEach(r=>{const k=String(r.interest??'');counts[k]=(counts[k]||0)+1;const s=normSpace(r.books);if(/^\d+(\.\d+)?$/.test(s))sum+=Number(s)});return{counts,sum,labels:Object.keys(counts).length}}
 function cleanStats(){const counts={};let sum=0,verify=0,valid=0;data.forEach(r=>{const i=normalizeInterest(r.interest),b=normalizeBooks(r.books),d=normalizeDate(r.date);if(i)counts[i]=(counts[i]||0)+1;else verify++;if(b!==null)sum+=b;else verify++;if(!d)verify++;if(i&&b!==null&&d)valid++});return{counts,sum,verify,valid}}
 function topCategory(counts){const a=Object.entries(counts).sort((x,y)=>y[1]-x[1]);return a[0]||['Chưa có dữ liệu',0]}
