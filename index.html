@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Book Fair – Dữ liệu lỗi, kết luận sai</title>
+  <meta name="description" content="Mô phỏng tác động của dữ liệu chưa chuẩn hóa đến kết quả thống kê Book Fair." />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root{--navy:#0b2f67;--blue:#1267b2;--sky:#eaf5ff;--gold:#d7a12b;--cream:#fff8e6;--red:#c9282d;--green:#138a52;--ink:#172033;--muted:#607089;--line:#dce5f0;--bad:#b42318;--badbg:#fff0ee;--good:#087443;--goodbg:#eaf8f0}
+    *{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#f4f7fb}
+    button,input,select{font:inherit} button{cursor:pointer}
+    .shell{max-width:1480px;margin:auto;padding:18px}
+    .hero{background:linear-gradient(135deg,#fff 0%,#f4f9ff 58%,#fff8e9 100%);border:1px solid #dbe6f2;border-top:6px solid var(--navy);border-radius:22px;padding:24px 28px;box-shadow:0 12px 35px rgba(17,47,91,.09)}
+    .brand{display:flex;align-items:center;gap:14px;color:var(--navy);font-weight:900;letter-spacing:.02em}.mark{width:58px;height:58px;border:3px solid var(--gold);border-radius:50%;display:grid;place-items:center;background:#fff;font-size:26px}
+    h1{font-size:clamp(30px,4vw,58px);line-height:1.02;margin:16px 0 12px;color:var(--navy);max-width:1100px}.lead{font-size:clamp(17px,1.6vw,23px);line-height:1.45;max-width:1050px;margin:0;color:#34465f}
+    .hook{margin-top:20px;padding:15px 18px;border-left:6px solid var(--red);background:#fff;border-radius:12px;font-size:20px;font-weight:800}.hook strong{color:var(--red)}
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}.btn{border:0;border-radius:11px;padding:12px 16px;font-weight:800;background:#fff;color:var(--navy);box-shadow:0 3px 10px rgba(30,55,90,.12)}.btn:hover{transform:translateY(-1px)}.btn.primary{background:var(--navy);color:#fff}.btn.gold{background:var(--gold);color:#172033}.btn.green{background:var(--green);color:#fff}.btn.danger{color:var(--bad);border:1px solid #f0b4ae;box-shadow:none}.fileBtn input{display:none}
+    .status{min-height:24px;color:var(--muted);font-weight:700;margin:0 2px 14px}.status.ok{color:var(--good)}.status.bad{color:var(--bad)}
+    .scenario{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:18px;box-shadow:0 6px 20px rgba(30,55,90,.06)}.card h2,.card h3{color:var(--navy);margin:0 0 12px}.card h2{font-size:26px}.card h3{font-size:21px}.prompt{background:var(--cream);border:1px solid #efd797}.prompt p{font-size:18px;line-height:1.45;margin:8px 0}.question{font-weight:900;color:#7b4100}
+    .entry{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:10px;align-items:end}.field label{display:block;font-size:13px;font-weight:800;color:#52627a;margin:0 0 6px}.field input{width:100%;border:1px solid #cbd7e6;border-radius:10px;padding:11px 12px;background:#fff}.field input:focus{outline:3px solid rgba(18,103,178,.15);border-color:var(--blue)}
+    .grid2{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}.tableCard{overflow:hidden;padding:0}.tableHead{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:var(--navy);color:#fff}.tableHead h2{color:#fff;margin:0;font-size:23px}.pill{background:#fff;color:var(--navy);padding:6px 11px;border-radius:999px;font-weight:900}.tableWrap{overflow:auto;max-height:510px}table{border-collapse:collapse;width:100%;min-width:760px}th{position:sticky;top:0;background:#e8f2ff;color:var(--navy);text-align:left;padding:11px;border-bottom:2px solid #b6cce7;z-index:1}td{padding:10px 11px;border-bottom:1px solid #e5ebf2}tbody tr:nth-child(even){background:#fafcff}.badCell{background:#fff0b8!important;color:#5b3900;font-weight:700}.rowActions button{border:0;background:#fff1f0;color:var(--bad);border-radius:8px;padding:7px 10px}
+    .legend{display:flex;gap:14px;flex-wrap:wrap;padding:12px 18px;color:#52627a;font-size:13px}.dot{width:12px;height:12px;display:inline-block;border-radius:3px;margin-right:6px;vertical-align:-1px}.dot.bad{background:#fff0b8;border:1px solid #ddb94f}
+    .dashboard{display:none;margin-top:18px}.dashboard.on{display:block}.compare{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{border-radius:18px;padding:20px;border:2px solid}.panel.bad{background:var(--badbg);border-color:#efaaa3}.panel.good{background:var(--goodbg);border-color:#8bd1ac}.panelTitle{display:flex;align-items:center;justify-content:space-between;gap:10px}.panelTitle h2{margin:0;font-size:26px}.panel.bad h2{color:var(--bad)}.panel.good h2{color:var(--good)}.badge{font-weight:900;padding:6px 10px;border-radius:999px;background:#fff}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.metric{background:rgba(255,255,255,.82);border-radius:13px;padding:12px}.metric b{display:block;font-size:28px;color:var(--navy)}.metric span{font-size:13px;color:#56677e}.conclusion{background:#fff;border-radius:13px;padding:14px;font-size:18px;line-height:1.35;font-weight:900}.panel.bad .conclusion{color:var(--bad)}.panel.good .conclusion{color:var(--good)}
+    .bars{display:grid;gap:8px;margin-top:14px}.barRow{display:grid;grid-template-columns:150px 1fr 35px;gap:8px;align-items:center;font-size:13px}.track{height:18px;background:#fff;border-radius:99px;overflow:hidden}.fill{height:100%;background:var(--blue);border-radius:99px}.panel.bad .fill{background:#d76358}.panel.good .fill{background:#2b9b62}
+    .reveal{margin-top:18px;padding:18px;border-radius:16px;background:var(--navy);color:#fff;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}.reveal .icon{font-size:42px}.reveal h2{color:#fff;margin:0 0 6px}.reveal p{margin:0;font-size:18px;line-height:1.45}.changed{color:#ffe08a;font-weight:900}
+    .notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.note{background:#fff;border-radius:14px;padding:16px;border:1px solid var(--line)}.note b{color:var(--navy);display:block;margin-bottom:6px}.footer{padding:20px;text-align:center;color:#62728a;font-size:13px}
+    @media(max-width:1000px){.scenario,.grid2,.compare{grid-template-columns:1fr}.entry{grid-template-columns:1fr 1fr}.entry .btn{grid-column:1/-1}.notes{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.reveal{grid-template-columns:1fr}}
+    @media(max-width:620px){.shell{padding:8px}.hero{padding:18px}.entry{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.barRow{grid-template-columns:110px 1fr 28px}.toolbar .btn,.fileBtn{width:100%;text-align:center}}
+  </style>
+</head>
+<body>
+<main class="shell">
+  <section class="hero">
+    <div class="brand"><div class="mark">📘</div><div>VINSCHOOL · MÔ PHỎNG DỮ LIỆU BOOK FAIR</div></div>
+    <h1>Dữ liệu đầu vào chưa chuẩn hóa có thể dẫn tới kết luận sai như thế nào?</h1>
+    <p class="lead">Ban tổ chức muốn thống kê mức độ quan tâm và số sách học sinh mang tới Book Fair. Nhưng cùng một ý nghĩa lại được nhập theo nhiều cách khác nhau.</p>
+    <div class="hook">Tình huống khởi động: Hệ thống báo <strong>“Học sinh không quan tâm đến Book Fair”</strong>. Em có tin kết luận này không?</div>
+  </section>
+
+  <div class="toolbar">
+    <button class="btn primary" id="sampleBtn">↻ Nạp dữ liệu lỗi mẫu</button>
+    <label class="btn fileBtn">⬆ Import CSV/XLSX<input id="fileInput" type="file" accept=".csv,.tsv,.xlsx,.xls" /></label>
+    <button class="btn gold" id="rawBtn">① Thống kê dữ liệu gốc</button>
+    <button class="btn green" id="compareBtn">② Chuẩn hóa và so sánh</button>
+    <button class="btn danger" id="clearBtn">Xóa dữ liệu</button>
+  </div>
+  <p class="status" id="status" role="status">Dữ liệu lỗi mẫu đã sẵn sàng. Hãy bấm “Thống kê dữ liệu gốc”.</p>
+
+  <section class="scenario">
+    <article class="card prompt">
+      <h2>📌 Bối cảnh nhập liệu</h2>
+      <p>Mỗi học sinh tự điền: <b>Họ và tên</b>, <b>Mức độ quan tâm</b>, <b>Số sách mang đến</b> và <b>Ngày đăng kí</b>.</p>
+      <p>Không có quy tắc nhập chung nên xuất hiện chữ hoa/thường, viết tắt, khoảng trắng, số kèm đơn vị và nhiều kiểu ngày.</p>
+      <p class="question">Câu hỏi dự đoán: Những lỗi trình bày này có làm thay đổi kết quả thống kê không?</p>
+    </article>
+    <article class="card">
+      <h2>⌨️ Nhập thêm một bản ghi lỗi</h2>
+      <div class="entry">
+        <div class="field"><label>Họ và tên</label><input id="name" value="  nguyễn an  " /></div>
+        <div class="field"><label>Mức độ quan tâm</label><input id="interest" value="RẤT QT" /></div>
+        <div class="field"><label>Số sách</label><input id="books" value="03 cuốn" /></div>
+        <div class="field"><label>Ngày đăng kí</label><input id="date" value="1-12-26" /></div>
+        <button class="btn primary" id="addBtn">+ Thêm</button>
+      </div>
+    </article>
+  </section>
+
+  <section class="grid2">
+    <article class="card tableCard">
+      <div class="tableHead"><h2>Dữ liệu Ban tổ chức nhận được</h2><span class="pill" id="rowCount">0 dòng</span></div>
+      <div class="tableWrap"><table><thead><tr><th>STT</th><th>Họ và tên</th><th>Mức độ quan tâm</th><th>Số sách</th><th>Ngày đăng kí</th><th></th></tr></thead><tbody id="tbody"></tbody></table></div>
+      <div class="legend"><span><i class="dot bad"></i>Giá trị có dấu hiệu chưa chuẩn hóa</span><span>Có thể sửa trực tiếp bằng cách bấm vào ô</span></div>
+    </article>
+    <article class="card">
+      <h2>🔎 Học sinh cần quan sát gì?</h2>
+      <div class="notes">
+        <div class="note"><b>1. Cùng nghĩa, khác cách viết</b>“Rất quan tâm”, “RẤT QT”, “rất quan tâm”.</div>
+        <div class="note"><b>2. Số bị lưu thành văn bản</b>“3 cuốn”, “'03”, “ba” không được cộng đúng.</div>
+        <div class="note"><b>3. Ngày không thống nhất</b>01/12/2026, 1-12-26, 2026-12-01.</div>
+      </div>
+      <div style="margin-top:18px;padding:16px;background:#eef6ff;border-radius:14px;line-height:1.5">
+        <b style="color:var(--navy)">Quy tắc chuẩn của mô phỏng</b><br>
+        Mức độ quan tâm: Rất quan tâm / Khá quan tâm / Quan tâm / Không quan tâm.<br>
+        Số sách: số nguyên, không kèm đơn vị.<br>
+        Ngày: dd/mm/yyyy. Dữ liệu thiếu phải xác minh, không tự đoán.
+      </div>
+    </article>
+  </section>
+
+  <section class="dashboard" id="dashboard">
+    <div class="compare">
+      <article class="panel bad">
+        <div class="panelTitle"><h2>❌ Thống kê trực tiếp từ dữ liệu lỗi</h2><span class="badge">Chưa chuẩn hóa</span></div>
+        <div class="metrics"><div class="metric"><b id="rawRows">0</b><span>Bản ghi</span></div><div class="metric"><b id="rawBooks">0</b><span>Sách hệ thống cộng được</span></div><div class="metric"><b id="rawLabels">0</b><span>Cách viết mức quan tâm</span></div></div>
+        <div class="conclusion" id="rawConclusion"></div><div class="bars" id="rawBars"></div>
+      </article>
+      <article class="panel good">
+        <div class="panelTitle"><h2>✓ Thống kê sau chuẩn hóa</h2><span class="badge">Đã kiểm tra</span></div>
+        <div class="metrics"><div class="metric"><b id="cleanRows">0</b><span>Bản ghi hợp lệ</span></div><div class="metric"><b id="cleanBooks">0</b><span>Tổng số sách đúng</span></div><div class="metric"><b id="verifyCount">0</b><span>Ô cần xác minh</span></div></div>
+        <div class="conclusion" id="cleanConclusion"></div><div class="bars" id="cleanBars"></div>
+      </article>
+    </div>
+    <div class="reveal"><div class="icon">💡</div><div><h2>Kết luận của bài khởi động</h2><p id="impactText">Cùng một tập dữ liệu nhưng cách trình bày không nhất quán khiến hệ thống chia nhỏ nhóm, bỏ sót số và đưa ra nhận định sai.</p></div></div>
+  </section>
+  <div class="footer">MTB 2.1.c · Áp dụng kĩ thuật chuẩn hóa định dạng để bảo đảm tính nhất quán cho một cột dữ liệu.</div>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+const sample=[
+['Nguyễn Minh An','Rất quan tâm','3 cuốn','1-12-26'],['Trần Gia Huy','RẤT QUAN TÂM',"'03",'01/12/2026'],['Lê Khánh Linh','rất quan tâm','ba','2026-12-01'],['Phạm Tuệ Minh','Rất QT','03 cuốn','1/12/26'],
+['Hoàng Bảo Ngọc','  Rất quan tâm  ','2 quyển','01-12-2026'],['Vũ Quang Nam','RẤT QT','hai','01.12.2026'],['Đỗ Mai Chi','rất QT','4 cuốn',' 01/12/2026 '],['Bùi Thanh Hà','Rất quan tâm','04','2026-12-01'],
+['Đặng Minh Khang','RẤT QUAN TÂM','5 quyển','1-12-26'],['Hồ Ngọc Lan','  rất quan tâm','một','01/12/2026'],['Nguyễn Khánh Vy','Rất QT',"'02",'01-12-2026'],['Trần Bảo Long','rất QT','2 cuốn','2026-12-01'],
+['Lê Gia Anh','Không quan tâm','0','01/12/2026'],['Phạm Minh Quân','Không quan tâm','0 cuốn','1-12-26'],['Hoàng Tuệ An','Không quan tâm','0','2026-12-01'],['Vũ Ngọc Mai','Không quan tâm','0 quyển','01.12.2026'],['Đỗ Quang Huy','Không quan tâm','0','1/12/26'],['Bùi Mai Linh','Không quan tâm','0','01/12/2026'],
+['Đặng Thanh Tú','Khá quan tâm','2 cuốn','02/12/2026'],['Hồ Bảo Vy','KHÁ QUAN TÂM',"'02",'2-12-26'],['Nguyễn Gia Nam','khá QT','hai','2026-12-02'],['Trần Minh Anh','Quan tâm','1 cuốn','02/12/2026'],['Lê Ngọc Hà','QT','một','-'],['Phạm Khánh An',' quan tâm ','1','N/A']
+];
+let data=[]; let mode='none';
+function reset(){data=sample.map((r,i)=>({id:Date.now()+i,name:r[0],interest:r[1],books:r[2],date:r[3]}));mode='none';render();hideStats();setStatus('Dữ liệu lỗi mẫu đã sẵn sàng. Hãy bấm “Thống kê dữ liệu gốc”.','ok')}
+function setStatus(t,c=''){const s=$('#status');s.textContent=t;s.className='status '+c}
+function normSpace(v){return String(v??'').trim().replace(/\s+/g,' ')}
+function strip(v){return normSpace(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d')}
+function normalizeInterest(v){const s=strip(v).replace(/\bqt\b/g,'quan tam');if(!s||s==='-'||s==='n/a')return null;if(s.includes('khong'))return 'Không quan tâm';if(s.includes('rat'))return 'Rất quan tâm';if(s.includes('kha'))return 'Khá quan tâm';if(s.includes('quan tam'))return 'Quan tâm';return null}
+const wordNums={khong:0,mot:1,hai:2,ba:3,bon:4,nam:5,sau:6,bay:7,tam:8,chin:9,muoi:10};
+function normalizeBooks(v){let s=strip(v).replace(/^'/,'').replace(/(cuon|quyen|sach)/g,'').trim();if(!s||s==='-'||s==='n/a')return null;if(s in wordNums)return wordNums[s];const n=Number(s.replace(',','.'));return Number.isFinite(n)&&n>=0?Math.round(n):null}
+function normalizeDate(v){let s=normSpace(v);if(!s||s==='-'||s.toUpperCase()==='N/A')return null;let y,m,d;let a=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);if(a){y=+a[1];m=+a[2];d=+a[3]}else{a=s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/);if(!a)return null;d=+a[1];m=+a[2];y=+a[3];if(y<100)y+=2000}const dt=new Date(y,m-1,d);if(dt.getFullYear()!==y||dt.getMonth()!==m-1||dt.getDate()!==d)return null;return `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`}
+function suspicious(type,v){if(type==='interest')return normalizeInterest(v)!==normSpace(v);if(type==='books')return normalizeBooks(v)===null||String(normalizeBooks(v))!==normSpace(v);if(type==='date')return normalizeDate(v)!==normSpace(v);return normSpace(v)!==v}
+function render(){const tb=$('#tbody');tb.innerHTML='';data.forEach((r,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${i+1}</td><td contenteditable data-id="${r.id}" data-key="name">${esc(r.name)}</td><td class="${suspicious('interest',r.interest)?'badCell':''}" contenteditable data-id="${r.id}" data-key="interest">${esc(r.interest)}</td><td class="${suspicious('books',r.books)?'badCell':''}" contenteditable data-id="${r.id}" data-key="books">${esc(r.books)}</td><td class="${suspicious('date',r.date)?'badCell':''}" contenteditable data-id="${r.id}" data-key="date">${esc(r.date)}</td><td class="rowActions"><button data-del="${r.id}">Xóa</button></td>`;tb.appendChild(tr)});$('#rowCount').textContent=data.length+' dòng'}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+$('#tbody').addEventListener('input',e=>{const c=e.target.closest('[data-key]');if(!c)return;const r=data.find(x=>String(x.id)===c.dataset.id);if(r){r[c.dataset.key]=c.textContent;hideStats();renderSoon()}});let rt;function renderSoon(){clearTimeout(rt);rt=setTimeout(render,450)}
+$('#tbody').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;data=data.filter(x=>String(x.id)!==b.dataset.del);render();hideStats()});
+$('#addBtn').onclick=()=>{data.push({id:Date.now(),name:$('#name').value,interest:$('#interest').value,books:$('#books').value,date:$('#date').value});render();hideStats();setStatus('Đã thêm một bản ghi. Các ô màu vàng có dấu hiệu chưa chuẩn hóa.','ok')};
+$('#sampleBtn').onclick=reset;$('#clearBtn').onclick=()=>{data=[];render();hideStats();setStatus('Đã xóa dữ liệu. Bạn có thể nhập tay hoặc import tệp.')};
+function rawStats(){const counts={};let sum=0;data.forEach(r=>{const k=String(r.interest??'');counts[k]=(counts[k]||0)+1;const s=normSpace(r.books);if(/^\d+(\.\d+)?$/.test(s))sum+=Number(s)});return{counts,sum,labels:Object.keys(counts).length}}
+function cleanStats(){const counts={};let sum=0,verify=0,valid=0;data.forEach(r=>{const i=normalizeInterest(r.interest),b=normalizeBooks(r.books),d=normalizeDate(r.date);if(i)counts[i]=(counts[i]||0)+1;else verify++;if(b!==null)sum+=b;else verify++;if(!d)verify++;if(i&&b!==null&&d)valid++});return{counts,sum,verify,valid}}
+function topCategory(counts){const a=Object.entries(counts).sort((x,y)=>y[1]-x[1]);return a[0]||['Chưa có dữ liệu',0]}
+function bars(el,counts){const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]);const max=Math.max(1,...entries.map(x=>x[1]));el.innerHTML=entries.slice(0,8).map(([k,v])=>`<div class="barRow"><span title="${esc(k)}">${esc(k)||'(trống)'}</span><div class="track"><div class="fill" style="width:${v/max*100}%"></div></div><b>${v}</b></div>`).join('')}
+function show(rawOnly=false){if(!data.length){setStatus('Chưa có dữ liệu để thống kê.','bad');return}const r=rawStats(),c=cleanStats(),rtop=topCategory(r.counts),ctop=topCategory(c.counts);$('#dashboard').classList.add('on');$('#rawRows').textContent=data.length;$('#rawBooks').textContent=r.sum;$('#rawLabels').textContent=r.labels;$('#rawConclusion').innerHTML=`Hệ thống kết luận: nhóm đông nhất là “${esc(rtop[0]||'(trống)')}” (${rtop[1]} học sinh).`;bars($('#rawBars'),r.counts);$('#cleanRows').textContent=c.valid;$('#cleanBooks').textContent=c.sum;$('#verifyCount').textContent=c.verify;$('#cleanConclusion').innerHTML=rawOnly?'Bấm “Chuẩn hóa và so sánh” để kiểm tra lại kết luận.':`Sau chuẩn hóa, nhóm đông nhất là “${esc(ctop[0])}” (${ctop[1]} học sinh).`;bars($('#cleanBars'),rawOnly?{}:c.counts);$('#impactText').innerHTML=rawOnly?'Kết quả bên trái đang coi mỗi cách viết là một nhóm khác nhau và chỉ cộng các ô đã là số. Em hãy dự đoán kết quả sau chuẩn hóa.':`Kết luận đã đổi từ <span class="changed">“${esc(rtop[0])}”</span> thành <span class="changed">“${esc(ctop[0])}”</span>. Tổng số sách tăng từ <span class="changed">${r.sum}</span> lên <span class="changed">${c.sum}</span> vì các giá trị dạng văn bản đã được nhận diện.`;$('#dashboard').scrollIntoView({behavior:'smooth',block:'start'});setStatus(rawOnly?'Đây là kết quả máy tính nhận được khi chưa chuẩn hóa. Hãy cho học sinh dự đoán trước khi so sánh.':'Đã chuẩn hóa và so sánh. Kết luận thay đổi vì dữ liệu đầu vào không nhất quán.','ok')}
+$('#rawBtn').onclick=()=>show(true);$('#compareBtn').onclick=()=>show(false);function hideStats(){$('#dashboard').classList.remove('on')}
+$('#fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{let rows=[];if(/\.csv$|\.tsv$/i.test(f.name)){rows=parseDelimited(await f.text(),/\.tsv$/i.test(f.name)?'\t':',')}else{if(!window.XLSX)throw new Error('Không tải được bộ đọc Excel. Hãy lưu tệp thành CSV.');const buf=await f.arrayBuffer(),wb=XLSX.read(buf,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]];rows=XLSX.utils.sheet_to_json(ws,{defval:''})}const mapped=rows.map((o,i)=>mapRow(o,i)).filter(Boolean);if(!mapped.length)throw new Error('Không tìm thấy các cột phù hợp.');data=mapped;render();hideStats();setStatus(`Đã import ${data.length} dòng từ ${f.name}.`,'ok')}catch(err){setStatus('Không thể đọc tệp: '+err.message,'bad')}finally{e.target.value=''}};
+function parseDelimited(text,sep){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);if(!lines.length)return[];const split=line=>{const out=[];let q=false,s='';for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(q&&line[i+1]==='"'){s+='"';i++}else q=!q}else if(ch===sep&&!q){out.push(s);s=''}else s+=ch}out.push(s);return out};const h=split(lines[0]);return lines.slice(1).map(l=>Object.fromEntries(split(l).map((v,i)=>[h[i]||`Cột ${i+1}`,v])))}
+function mapRow(o,i){const keys=Object.keys(o),find=(...terms)=>{const k=keys.find(k=>terms.some(t=>strip(k).includes(t)));return k?o[k]:''};const vals=Object.values(o);const name=find('ho va ten','ho ten','name')||vals[0]||'';const interest=find('muc do quan tam','quan tam','interest')||vals[1]||'';const books=find('so sach','sach mang','books')||vals[2]||'';const date=find('ngay dang ki','ngay dang ky','date')||vals[3]||'';if(![name,interest,books,date].some(v=>String(v).trim()))return null;return{id:Date.now()+i,name,interest,books,date}}
+reset();
+</script>
+</body>
+</html>
